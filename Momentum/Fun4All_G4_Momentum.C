@@ -9,7 +9,7 @@
 #include <g4detectors/PHG4CylinderSubsystem.h>
 #include <g4trackfastsim/PHG4TrackFastSim.h>
 #include <g4trackfastsim/PHG4TrackFastSimEval.h>
-#include <g4main/PHG4ParticleGenerator.h>
+#include <g4main/PHG4SimpleEventGenerator.h>
 #include <g4main/PHG4TruthSubsystem.h>
 #include <g4main/PHG4Reco.h>
 #include <phool/recoConsts.h>
@@ -32,29 +32,45 @@ int Fun4All_G4_Momentum(const int nEvents = 1000, const char *outfile = NULL)
   // Make the Server
   //////////////////////////////////////////
   Fun4AllServer *se = Fun4AllServer::instance();
-  se->Verbosity(0);
+  se->Verbosity(01);
 
   recoConsts *rc = recoConsts::instance();
-  //  rc->set_IntFlag("RANDOMSEED", 12345); // if you want to use a fixed seed
-  // PHG4ParticleGenerator generates particle
-  // distributions in eta/phi/mom range
-  PHG4ParticleGenerator *gen = new PHG4ParticleGenerator("PGENERATOR");
-  gen->set_name("e+");
-  gen->set_vtx(0, 0, 0);
-  gen->set_eta_range(-0.05, +0.05);
-  gen->set_mom_range(4, 4); // GeV/c
-  gen->set_phi_range(0., 90. / 180. * TMath::Pi());  // 0-90 deg
+  rc->set_IntFlag("RANDOMSEED", 12345); // if you want to use a fixed seed
+
+
+  // toss low multiplicity dummy events
+  PHG4SimpleEventGenerator *gen = new PHG4SimpleEventGenerator();
+  gen->add_particles("e+", 1);  // mu+,e+,proton,pi+,Upsilon
+  //gen->add_particles("pi+",100); // 100 pion option
+
+    gen->set_vertex_distribution_function(PHG4SimpleEventGenerator::Uniform,
+                                          PHG4SimpleEventGenerator::Uniform,
+                                          PHG4SimpleEventGenerator::Uniform);
+    gen->set_vertex_distribution_mean(0.0, 0.0, 0.0);
+    gen->set_vertex_distribution_width(0.0, 0.0, 0.0);
+
+  gen->set_vertex_size_function(PHG4SimpleEventGenerator::Uniform);
+  gen->set_vertex_size_parameters(0.0, 0.0);
+  gen->set_eta_range(-.05, .05);
+  gen->set_phi_range(-1.0 * TMath::Pi(), 1.0 * TMath::Pi());
+  gen->set_pt_range(4, 4);
+  gen->Embed(2);
+  gen->Verbosity(0);
+
   se->registerSubsystem(gen);
+
+  
+  
 
   PHG4Reco *g4Reco = new PHG4Reco();
   g4Reco->set_field(1.5);  // 1.5 T solenoidal field
 
-  double si_thickness[6] = {0.02, 0.02, 0.0625, 0.032, 0.032, 0.032};
-  double svxrad[6] = {2.71, 4.63, 11.765, 25.46, 41.38, 63.66};
-  double length[6] = {20., 20., 36., -1., -1., -1.};  // -1 use eta coverage to determine length
+  double si_thickness[6] = {0.032,  0.032, 0.032};
+  double svxrad[6] = {10,40,80};
+  double length[6] = {80., 80., 80.};  // -1 use eta coverage to determine length
   PHG4CylinderSubsystem *cyl;
   // here is our silicon:
-  for (int ilayer = 0; ilayer < 6; ilayer++)
+  for (int ilayer = 0; ilayer <3; ilayer++)
   {
     cyl = new PHG4CylinderSubsystem("SVTX", ilayer);
     cyl->set_double_param("radius", svxrad[ilayer]);
@@ -72,7 +88,7 @@ int Fun4All_G4_Momentum(const int nEvents = 1000, const char *outfile = NULL)
   // Black hole swallows everything - prevent loopers from returning
   // to inner detectors
   cyl = new PHG4CylinderSubsystem("BlackHole", 0);
-  cyl->set_double_param("radius", 80);        // 80 cm
+  cyl->set_double_param("radius", 90);        // 80 cm
   cyl->set_double_param("thickness", 0.1); // does not matter (but > 0)
   cyl->SetActive();
   cyl->BlackHole(); // eats everything
@@ -91,6 +107,7 @@ int Fun4All_G4_Momentum(const int nEvents = 1000, const char *outfile = NULL)
   kalman->set_use_vertex_in_fitting(false);
   kalman->set_sub_top_node_name("SVTX");
   kalman->set_trackmap_out_name("SvtxTrackMap");
+  kalman->set_primary_assumption_pid(-11);
 
   //  add Si Trtacker
   kalman->add_phg4hits(
@@ -132,11 +149,4 @@ int Fun4All_G4_Momentum(const int nEvents = 1000, const char *outfile = NULL)
     gSystem->Exit(0);
   }
   return 0;
-}
-
-PHG4ParticleGenerator *get_gen(const char *name = "PGENERATOR")
-{
-  Fun4AllServer *se = Fun4AllServer::instance();
-  PHG4ParticleGenerator *pgun = (PHG4ParticleGenerator *) se->getSubsysReco(name);
-  return pgun;
 }
