@@ -65,7 +65,7 @@ int Fun4All_G4_Momentum(const int nEvents = 1000, const char *outfile = NULL)
   PHG4Reco *g4Reco = new PHG4Reco();
   g4Reco->set_field(1.5);  // 1.5 T solenoidal field
 
-  double si_thickness[6] = {0.032,  0.032, 0.032};
+  double si_thickness[6] = {0.32,  0.32, 0.032};
   double svxrad[6] = {10,40,80};
   double length[6] = {80., 80., 80.};  // -1 use eta coverage to determine length
   PHG4CylinderSubsystem *cyl;
