@@ -1,3 +1,22 @@
+#pragma once
+#if ROOT_VERSION_CODE >= ROOT_VERSION(6,00,0)
+#include <fun4all/SubsysReco.h>
+#include <fun4all/Fun4AllServer.h>
+#include <fun4all/Fun4AllInputManager.h>
+#include <fun4all/Fun4AllDstOutputManager.h>
+#include <fun4all/Fun4AllOutputManager.h>
+#include <fun4all/Fun4AllDummyInputManager.h>
+#include <g4detectors/PHG4CylinderSubsystem.h>
+#include <g4eval/PHG4DSTReader.h>
+#include <g4main/PHG4ParticleGenerator.h>
+#include <g4main/PHG4Reco.h>
+#include <g4main/PHG4TruthSubsystem.h>
+#include <phool/recoConsts.h>
+R__LOAD_LIBRARY(libg4eval.so)
+R__LOAD_LIBRARY(libfun4all.so)
+R__LOAD_LIBRARY(libg4testbench.so)
+R__LOAD_LIBRARY(libg4detectors.so)
+#endif
 int Fun4All_G4_Cylinder(const int nEvents = 10, const char * outfile = NULL)
 {
 
@@ -11,13 +30,11 @@ int Fun4All_G4_Cylinder(const int nEvents = 10, const char * outfile = NULL)
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(0);
 
+  recoConsts *rc = recoConsts::instance();
+//  rc->set_IntFlag("RANDOMSEED", 12345); // if you want to use a fixed seed
   // PHG4ParticleGenerator generates particle
   // distributions in eta/phi/mom range
   PHG4ParticleGenerator *gen = new PHG4ParticleGenerator("PGENERATOR");
-  int uniqueseed = TRandom3(0).GetSeed();
-  recoConsts *rc = recoConsts::instance();
-  rc->set_IntFlag("RANDOMSEED", uniqueseed);
-  gen->set_seed(uniqueseed);
   //gen->set_name("gamma");
   gen->set_name("e+");
   gen->set_vtx(0, 0, 0);
@@ -53,7 +70,7 @@ int Fun4All_G4_Cylinder(const int nEvents = 10, const char * outfile = NULL)
 
   if (outfile)
     {
-      Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT",outfile);
+      Fun4AllOutputManager *out = new Fun4AllDstOutputManager("DSTOUT",outfile);
       se->registerOutputManager(out);
     }
   Fun4AllInputManager *in = new Fun4AllDummyInputManager( "JADE");
@@ -71,7 +88,7 @@ int Fun4All_G4_Cylinder(const int nEvents = 10, const char * outfile = NULL)
       delete se;
       gSystem->Exit(0);
     }
-
+  return 0;
 }
 
 PHG4ParticleGenerator *get_gen(const char *name="PGENERATOR")

@@ -1,3 +1,23 @@
+#pragma once
+#if ROOT_VERSION_CODE >= ROOT_VERSION(6,00,0)
+#include <fun4all/SubsysReco.h>
+#include <fun4all/Fun4AllServer.h>
+#include <fun4all/Fun4AllInputManager.h>
+#include <fun4all/Fun4AllDstOutputManager.h>
+#include <fun4all/Fun4AllOutputManager.h>
+#include <fun4all/Fun4AllDummyInputManager.h>
+#include <g4detectors/PHG4BlockSubsystem.h>
+#include <g4eval/PHG4DSTReader.h>
+#include <g4main/PHG4ParticleGun.h>
+#include <g4main/PHG4Reco.h>
+#include <g4main/PHG4TruthSubsystem.h>
+#include <phool/recoConsts.h>
+R__LOAD_LIBRARY(libg4eval.so)
+R__LOAD_LIBRARY(libfun4all.so)
+R__LOAD_LIBRARY(libg4testbench.so)
+R__LOAD_LIBRARY(libg4detectors.so)
+#endif
+
 int Fun4All_G4_block(const int nEvents = 10, const char *outfile=NULL)
 {
 
@@ -11,7 +31,11 @@ int Fun4All_G4_block(const int nEvents = 10, const char *outfile=NULL)
   // Make the Server
   //////////////////////////////////////////
   Fun4AllServer *se = Fun4AllServer::instance();
-  //  se->Verbosity(1);
+  //  se->Verbosity(1); // enable some blabbering
+
+  recoConsts *rc = recoConsts::instance();
+// uncomment and change number (or not)if you want to use a fixed seed
+//  rc->set_IntFlag("RANDOMSEED", 12345); 
 
   // particle gun
   PHG4ParticleGun *gun = new PHG4ParticleGun("PGUN");
@@ -61,7 +85,7 @@ int Fun4All_G4_block(const int nEvents = 10, const char *outfile=NULL)
 
   if (outfile)
     {
-      Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT",outfile);
+      Fun4AllOutputManager *out = new Fun4AllDstOutputManager("DSTOUT",outfile);
       se->registerOutputManager(out);
 
     }
@@ -100,7 +124,7 @@ int Fun4All_G4_block(const int nEvents = 10, const char *outfile=NULL)
       delete se;
       gSystem->Exit(0);
     }
-   return;
+   return 0;
 
 }
 
